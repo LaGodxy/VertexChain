@@ -1,35 +1,18 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-
-const STORAGE_KEY = 'vertexchain-report-config';
-const METRICS = [
-  'Live gists',
-  'New vs returning users',
-  'Scatter engagement trends',
-  'Radar channel activity',
-  'Category distribution',
-  'Location trends',
-];
-const FREQUENCIES = ['Daily', 'Weekly', 'Monthly'] as const;
-
-type Frequency = (typeof FREQUENCIES)[number];
-
-interface ReportConfig {
-  frequency: Frequency;
-  recipients: string[];
-  metrics: string[];
-}
-
-const defaultConfig: ReportConfig = {
-  frequency: 'Weekly',
-  recipients: ['ops@vertexchain.app', 'founders@vertexchain.app'],
-  metrics: ['Live gists', 'New vs returning users', 'Category distribution'],
-};
-
-function isEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+import { useEffect, useState } from 'react';
+import {
+  FREQUENCIES,
+  METRICS,
+  STORAGE_KEY,
+  defaultConfig,
+  isEmail,
+  loadConfig,
+  saveConfig as persistConfig,
+  type Frequency,
+  type ReportConfigData,
+} from '@/lib/report-config-types';
+import ReportPreviewAside from '@/components/ReportPreviewAside';
 
 export default function ReportConfig() {
   const [frequency, setFrequency] = useState<Frequency>(defaultConfig.frequency);
@@ -40,19 +23,12 @@ export default function ReportConfig() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved) as ReportConfig;
-      if (FREQUENCIES.includes(parsed.frequency)) setFrequency(parsed.frequency);
-      if (Array.isArray(parsed.metrics)) setMetrics(parsed.metrics.filter((m) => METRICS.includes(m)));
-      if (Array.isArray(parsed.recipients)) setRecipients(parsed.recipients.filter((r) => typeof r === 'string'));
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
+    const parsed = loadConfig();
+    if (!parsed) return;
+    if (FREQUENCIES.includes(parsed.frequency)) setFrequency(parsed.frequency);
+    if (Array.isArray(parsed.metrics)) setMetrics(parsed.metrics.filter((m) => METRICS.includes(m as typeof METRICS[number])));
+    if (Array.isArray(parsed.recipients)) setRecipients(parsed.recipients.filter((r) => typeof r === 'string'));
   }, []);
-
-  const previewTitle = useMemo(() => `${frequency} analytics report`, [frequency]);
 
   const addRecipient = () => {
     const next = emailInput.trim().toLowerCase();
@@ -72,7 +48,7 @@ export default function ReportConfig() {
   const saveConfig = () => {
     if (recipients.length === 0) { setError('Add at least one recipient before saving.'); return; }
     if (metrics.length === 0) { setError('Select at least one metric for the report.'); return; }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ frequency, recipients, metrics }));
+    persistConfig({ frequency, recipients, metrics } as ReportConfigData);
     setStatus(`Saved ${frequency.toLowerCase()} report configuration.`);
     setError(null);
   };
@@ -253,73 +229,11 @@ export default function ReportConfig() {
         </div>
       </div>
 
-      <aside
-        style={{
-          background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)',
-          borderRadius: 28,
-          padding: '28px',
-          color: '#e2e8f0',
-          boxShadow: '0 24px 50px rgba(15,23,42,0.18)',
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: '#93c5fd',
-            marginBottom: 14,
-          }}
-        >
-          Report Preview
-        </div>
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            borderRadius: 22,
-            padding: '22px',
-            border: '1px solid rgba(148,163,184,0.18)',
-          }}
-        >
-          <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 8 }}>{previewTitle}</div>
-          <div style={{ color: '#cbd5e1', fontSize: 14, marginBottom: 20 }}>
-            Sent to {recipients.length} recipient{recipients.length === 1 ? '' : 's'} every{' '}
-            {frequency.toLowerCase()}.
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gap: 12,
-              padding: '16px',
-              borderRadius: 18,
-              background: '#ffffff',
-              color: '#0f172a',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>Delivery</div>
-              <div style={{ marginTop: 4, fontSize: 15 }}>{frequency} cadence</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>Recipients</div>
-              <div style={{ marginTop: 6, display: 'grid', gap: 6 }}>
-                {recipients.map((r) => (
-                  <div key={r} style={{ fontSize: 14 }}>{r}</div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>Included metrics</div>
-              <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
-                {metrics.map((m) => (
-                  <li key={m} style={{ marginBottom: 6, fontSize: 14 }}>{m}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <ReportPreviewAside
+        frequency={frequency}
+        recipients={recipients}
+        metrics={metrics}
+      />
     </section>
   );
 }
