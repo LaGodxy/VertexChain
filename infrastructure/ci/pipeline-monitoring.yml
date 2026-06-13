@@ -23,7 +23,7 @@ jobs:
       - name: Collect pipeline statistics
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash infrastructure/scripts/collect-pipeline-stats.sh PinSpace-Org VertexChain
+        run: bash infrastructure/scripts/collect-pipeline-stats.sh VertexChainLabs VertexChain
 
       - name: Persist latest metrics snapshot
         run: |
@@ -46,7 +46,7 @@ jobs:
           compare="$(jq -n --argjson r "$rate" --argjson t "$threshold" '$r > $t')"
           if [ "$compare" = "true" ]; then
             gh issue create \
-              --repo PinSpace-Org/VertexChain \
+              --repo VertexChainLabs/VertexChain \
               --title "CI pipeline alert: elevated failure rate" \
               --body "Failure rate is ${rate}, above threshold ${threshold}. Please investigate recent workflow runs." \
               --label monitoring || true

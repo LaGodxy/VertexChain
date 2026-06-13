@@ -16,8 +16,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_BACKEND: pinspace-org/vertexchain-backend
-  IMAGE_FRONTEND: pinspace-org/vertexchain-frontend
+  IMAGE_BACKEND: vertexchainlabs/vertexchain-backend
+  IMAGE_FRONTEND: vertexchainlabs/vertexchain-frontend
 
 jobs:
   sign:
