@@ -3,13 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { searchAnalytics, groupResults, highlightMatch, type SearchResult, type SearchResultType } from '@/lib/search';
-
-const TYPE_LABELS: Record<SearchResultType, string> = {
-  page: 'Pages',
-  metric: 'Metrics',
-  location: 'Locations',
-  category: 'Categories',
-};
+import { TYPE_LABELS, ORDERED_TYPES } from '@/lib/search-labels';
+import SearchIcon from '@/components/ui/SearchIcon';
+import TypeIcon from '@/components/ui/TypeIcon';
 
 interface SearchBarProps {
   /** Controlled open state (for keyboard shortcut integration) */
